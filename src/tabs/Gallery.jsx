@@ -2,6 +2,7 @@ import { Component } from 'react';
 
 import * as ImageService from 'service/image-service';
 import { Button, SearchForm, Grid, GridItem, Text, CardItem } from 'components';
+import MyModal from 'components/Modal/MyModal';
 
 export class Gallery extends Component {
   state = {
@@ -12,6 +13,9 @@ export class Gallery extends Component {
     error: null,
     isEmpty: false,
     isVisible: false,
+    isShowModal: false,
+    largeImage: '',
+    tag: '',
   };
 
   componentDidUpdate = (_, prevState) => {
@@ -47,11 +51,32 @@ export class Gallery extends Component {
   };
 
   handleSubmit = value => {
-    this.setState({ query: value });
+    this.setState({ query: value, page: 1, images: [] });
+  };
+
+  onLoadMore = () => {
+    this.setState(prev => ({ page: prev.page + 1 }));
+  };
+
+  onOpenModal = (largeImage, tag) => {
+    this.setState({ isShowModal: true, largeImage: largeImage, tag: tag });
+  };
+
+  onCloseModal = () => {
+    this.setState({ isShowModal: false, largeImage: '', tag: '' });
   };
 
   render() {
-    const { images, isLoading, isEmpty, isVisible, error } = this.state;
+    const {
+      images,
+      isLoading,
+      isEmpty,
+      isVisible,
+      error,
+      isShowModal,
+      largeImage,
+      tag,
+    } = this.state;
     return (
       <>
         <SearchForm onSubmit={this.handleSubmit} />
@@ -64,7 +89,10 @@ export class Gallery extends Component {
         {images.length > 0 && (
           <Grid>
             {images.map(({ id, avg_color, src, alt }) => (
-              <GridItem key={id}>
+              <GridItem
+                key={id}
+                onClick={() => this.onOpenModal(src.large, alt)}
+              >
                 <CardItem color={avg_color}>
                   <img src={src.large} alt={alt} />
                 </CardItem>
@@ -72,6 +100,17 @@ export class Gallery extends Component {
             ))}
           </Grid>
         )}
+        {isVisible && !isLoading && images.length > 0 && (
+          <Button onClick={this.onLoadMore} disabled={isLoading}>
+            {isLoading ? 'Loading...' : 'Load More'}
+          </Button>
+        )}
+        <MyModal
+          modalIsOpen={isShowModal}
+          closeModal={this.onCloseModal}
+          src={largeImage}
+          tag={tag}
+        />
       </>
     );
   }
